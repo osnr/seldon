@@ -6,12 +6,12 @@
 
 (def meme->rates
   {:pastorialism
-   (fn [meme rates tile stocks]
-     )
+   (fn [value rates tile stocks]
+     (assoc rates :fertility (+ (:fertility rates) 1)))
 
    :forest-gardening
-   (fn [meme rates tile stocks]
-     )})
+   (fn [value rates tile stocks]
+     rates)})
 
 (defn base-test []
   (let [base-pop
@@ -30,7 +30,7 @@
                :bronze-weapons 0.1
                :iron-weapons 0.1
 
-               :slavery-+war 0.1
+               :slavery 0.1
                :class-structure 0.1
                :cities 0.1
 
@@ -63,9 +63,48 @@
               {:population 100
                :domestication-corn 0
                :domestication-potatoes 0
-               :weapons-bow-and-arrow 0})
+               :weapons-bow-and-arrow 0
+               :deforestation 0})
 
         base-tile
         (Tile. [] [base-pop])]
     base-tile))
+
+(defn simple-test []
+  (let [simple-pop (Pop. {:pastorialism 1
+                          :forest-gardening 2}
+
+                         {:fertility 100
+                          :mortality 200}
+
+                         {:population 10
+                          :domestication-corn 0})
+        simple-tile (Tile. [] [simple-pop])]
+    (loop [tile simple-tile]
+      (clojure.pprint/pprint tile)
+      (Thread/sleep 500)
+      (recur (step-tile tile)))))
+
+(defn step-memeome [memeome]
+  memeome)
+
+(defn step-rates [tile pop]
+  (let [memeome (:memeome pop)
+        stocks (:stocks pop)
+        rates (:rates pop)]
+    (reduce-kv (fn [rates meme value]
+                 ((meme->rates meme) value rates tile stocks))
+               rates
+               memeome)))
+
+(defn step-pop [tile pop]
+  (let [memeome (:memeome pop)
+        stocks (:stocks pop)]
+    (Pop. (step-memeome memeome)
+          (step-rates tile pop)
+          stocks)))
+
+(defn step-tile [tile]
+  (Tile. (:resources tile)
+         (mapv (partial step-pop tile) (:pops tile))))
 
