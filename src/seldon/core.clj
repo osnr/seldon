@@ -6,12 +6,56 @@
 
 (def meme->rates
   {:pastorialism
+<<<<<<< HEAD
    (fn [value rates tile stocks]
      (assoc rates :fertility (+ (:fertility rates) 1)))
 
    :forest-gardening
    (fn [value rates tile stocks]
      rates)})
+=======
+    (fn [value rates tile stocks]
+       rates)
+
+    :forest-gardening
+    (fn [value rates tile stocks]
+       rates)
+    :agriculture (fn [value rates tile stocks] rates)
+    :slash-and-burn (fn [value rates tile stocks] rates)
+    :irrigation (fn [value rates tile stocks] rates)
+    :crop-rotation (fn [value rates tile stocks] rates)
+
+    :pseudo-writing (fn [value rates tile stocks] rates)
+    :writing (fn [value rates tile stocks] rates)
+    :alphabetic-writing (fn [value rates tile stocks] rates)
+
+    :bow-and-arrow (fn [value rates tile stocks] rates)
+    :bronze-weapons (fn [value rates tile stocks] rates)
+    :iron-weapons (fn [value rates tile stocks] rates)
+
+    :slavery (fn [value rates tile stocks] (assoc rates :warlikeness (* 1.5 (rates :warlikeness)) ) )
+    :class-structure (fn [value rates tile stocks] rates)
+    :cities (fn [value rates tile stocks] rates)
+
+    :bazaar-economy (fn [value rates tile stocks] rates)
+    :state-planning (fn [value rates tile stocks] rates)
+    :value-gold (fn [value rates tile stocks] rates)
+    :value-silver (fn [value rates tile stocks] rates)
+
+    :shamanic (fn [value rates tile stocks] rates)
+    :pantheon-of-gods (fn [value rates tile stocks] rates)
+    :one-god (fn [value rates tile stocks] rates)
+    :revelation (fn [value rates tile stocks] rates)
+    :state-priesthood (fn [value rates tile stocks] rates)
+    :holy-sites (fn [value rates tile stocks] rates)
+    :animal-sacrifice (fn [value rates tile stocks] rates)
+    :human-sacrifice (fn [value rates tile stocks] (assoc rates :warlikeness (* 2.0 (rates :warlikeness))))
+
+    :small-boats (fn [value rates tile stocks] rates)
+    :sailing (fn [value rates tile stocks] rates)
+    :paved-roads (fn [value rates tile stocks] rates)
+    })
+>>>>>>> rate update functions
 
 (defn base-test []
   (let [base-pop
