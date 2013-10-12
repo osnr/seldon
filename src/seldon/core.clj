@@ -2,13 +2,13 @@
 
 (defrecord Tile [resources pops])
 
-(defrecord Pop [memeome rates stocks])
+(defrecord Pop [memome rates stocks])
 
 (def base-rates
   {:fertility 10
    :mortality 0.5
    :pop-stability 1
-   :cultural-spread 0.5
+   :cultural-contact 0.5
    :political-stability 1
    :warlikeness 0.5
    :gdp 0.01})
@@ -56,6 +56,34 @@
    :sailing (fn [value rates tile stocks] rates)
    :paved-roads (fn [value rates tile stocks] rates)})
 
+(def rate->stocks
+  {:fertility
+   (fn [rate-value stocks]
+     stocks)
+
+   :mortality
+   (fn [rate-value stocks]
+     stocks)
+
+   :pop-stability
+   (fn [rate-value stocks]
+     stocks)
+
+   :cultural-contact
+   (fn [rate-value stocks]
+     stocks)
+
+   :political-stability
+   (fn [rate-value stocks]
+     stocks)
+
+   :warlikeness
+   (fn [rate-value stocks]
+     stocks)
+
+   :gdp
+   (fn [rate-value stocks]
+     stocks)})
 
 (defn rand-normal [scale]
   (* scale
@@ -109,8 +137,6 @@
                :gdp 1}
 
               {:population 100
-               :domestication-corn 0
-               :domestication-potatoes 0
                :war-readiness 0
                :deforestation 0})
 
@@ -122,26 +148,32 @@
                [big-pop])]
     big-tile))
 
-(defn step-memeome [memeome]
-  (into {} (for [[meme value] memeome]
+(defn step-memome [tile memome]
+  (into {} (for [[meme value] memome]
              [meme (max 0
                         (min 1
                              (+ value (rand-normal (/ 1.0 60.0)))))])))
 
-(defn step-rates [tile pop]
-  (let [memeome (:memeome pop)
-        stocks (:stocks pop)
+(defn step-rates [tile memome pop]
+  (let [stocks (:stocks pop)
         rates (:rates pop)]
     (reduce-kv (fn [rates meme value]
                  ((meme->rates meme) value rates tile stocks))
                base-rates
-               memeome)))
+               memome)))
+
+(defn step-stocks [rates stocks]
+  (reduce-kv (fn [stocks rate rate-value]
+               ((rate->stocks rate) rate-value stocks))
+             stocks
+             rates))
 
 (defn step-pop [tile pop]
-  (let [memeome (:memeome pop)
-        stocks (:stocks pop)]
-    (Pop. (step-memeome memeome)
-          (step-rates tile pop)
+  (let [memome (step-memome tile (:memome pop))
+        rates (step-rates tile memome pop)
+        stocks (step-stocks rates (:stocks pop))]
+    (Pop. memome
+          rates
           stocks)))
 
 (defn step-tile [tile]
@@ -150,12 +182,12 @@
          (mapv (partial step-pop tile) (:pops tile))))
 
 (defn simple-test []
-  (let [simple-pop (Pop. {:pastorialism 0.1
+  (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
                           :forest-gardening 0.2}
 
-                         base-rates
+                         base-rates ; simple rates
 
-                         {:population 10
+                         {:population 10 ; simple stocks
                           :domestication-corn 0})
         simple-tile (Tile. [] [simple-pop])]
     (loop [tile simple-tile]
