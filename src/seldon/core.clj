@@ -124,7 +124,9 @@
 
 (defn step-memeome [memeome]
   (into {} (for [[meme value] memeome]
-             [meme (+ value (rand-normal (/ 1 60)))])))
+             [meme (max 0
+                        (min 1
+                             (+ value (rand-normal (/ 1.0 60.0)))))])))
 
 (defn step-rates [tile pop]
   (let [memeome (:memeome pop)
@@ -148,11 +150,10 @@
          (mapv (partial step-pop tile) (:pops tile))))
 
 (defn simple-test []
-  (let [simple-pop (Pop. {:pastorialism 1
-                          :forest-gardening 2}
+  (let [simple-pop (Pop. {:pastorialism 0.1
+                          :forest-gardening 0.2}
 
-                         {:fertility 100
-                          :mortality 200}
+                         base-rates
 
                          {:population 10
                           :domestication-corn 0})
