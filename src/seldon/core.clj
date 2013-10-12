@@ -6,6 +6,7 @@
 
 (def meme->rates
   {:pastorialism
+    
 <<<<<<< HEAD
    (fn [value rates tile stocks]
      (assoc rates :fertility (+ (:fertility rates) 1)))
@@ -29,11 +30,11 @@
     :writing (fn [value rates tile stocks] rates)
     :alphabetic-writing (fn [value rates tile stocks] rates)
 
-    :bow-and-arrow (fn [value rates tile stocks] rates)
-    :bronze-weapons (fn [value rates tile stocks] rates)
-    :iron-weapons (fn [value rates tile stocks] rates)
+    :bow-and-arrow (fn [value rates tile stocks] (assoc rates :war-readiness (* value 1.5 (rates :war-readiness))))
+    :bronze-weapons (fn [value rates tile stocks] (assoc rates :war-readiness (* value 2.0 (rates :war-readiness))))
+    :iron-weapons (fn [value rates tile stocks] (assoc rates :war-readiness (* value 2.0 (rates :war-readiness))))
 
-    :slavery (fn [value rates tile stocks] (assoc rates :warlikeness (* 1.5 (rates :warlikeness)) ) )
+    :slavery (fn [value rates tile stocks] (assoc rates :warlikeness (* value 1.5 (rates :warlikeness)) ) )
     :class-structure (fn [value rates tile stocks] rates)
     :cities (fn [value rates tile stocks] rates)
 
@@ -49,7 +50,7 @@
     :state-priesthood (fn [value rates tile stocks] rates)
     :holy-sites (fn [value rates tile stocks] rates)
     :animal-sacrifice (fn [value rates tile stocks] rates)
-    :human-sacrifice (fn [value rates tile stocks] (assoc rates :warlikeness (* 2.0 (rates :warlikeness))))
+    :human-sacrifice (fn [value rates tile stocks] (assoc rates :warlikeness (* value 2.0 (rates :warlikeness))))
 
     :small-boats (fn [value rates tile stocks] rates)
     :sailing (fn [value rates tile stocks] rates)
@@ -99,7 +100,7 @@
               {:fertility 1
                :mortality 1
                :pop-stability 1
-               :cultural-spread 0.1
+               :cultural-contact 0.1
                :political-stability 0.1
                :warlikeness 0.1
                :gdp 1}
@@ -107,7 +108,7 @@
               {:population 100
                :domestication-corn 0
                :domestication-potatoes 0
-               :weapons-bow-and-arrow 0
+               :war-readiness 0
                :deforestation 0})
 
         base-tile
