@@ -5,13 +5,14 @@
 (defrecord Pop [memome rates stocks])
 
 (def base-rates
-  {:fertility 10
+  {:fertility 2.0
    :mortality 0.5
    :pop-stability 1
    :cultural-contact 0.5
    :political-stability 1
    :warlikeness 0.5
-   :gdp 0.01})
+   :gdp 0.01
+   :war-preparation 0.1})
 
 (def meme->rates
   {:pastorialism
@@ -30,9 +31,9 @@
    :writing (fn [value rates tile stocks] rates)
    :alphabetic-writing (fn [value rates tile stocks] rates)
 
-   :bow-and-arrow (fn [value rates tile stocks] (assoc rates :war-readiness (* value 1.5 (rates :war-readiness))))
-   :bronze-weapons (fn [value rates tile stocks] (assoc rates :war-readiness (* value 2.0 (rates :war-readiness))))
-   :iron-weapons (fn [value rates tile stocks] (assoc rates :war-readiness (* value 2.0 (rates :war-readiness))))
+   :bow-and-arrow (fn [value rates tile stocks] (assoc rates :war-preparation (* value 1.5 (rates :war-preparation))))
+   :bronze-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (* value 2.0 (rates :war-preparation))))
+   :iron-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (* value 2.0 (rates :war-preparation))))
 
    :slavery (fn [value rates tile stocks] (assoc rates :warlikeness (* value 1.5 (rates :warlikeness)) ) )
    :class-structure (fn [value rates tile stocks] rates)
@@ -59,11 +60,11 @@
 (def rate->stocks
   {:fertility
    (fn [rate-value stocks]
-     stocks)
+     (assoc stocks :population (+ (stocks :population) (* rate-value (/ (stocks :population) 2) ))))
 
    :mortality
    (fn [rate-value stocks]
-     stocks)
+     (assoc stocks :population (* (- 1 rate-value) (stocks :population)) ))
 
    :pop-stability
    (fn [rate-value stocks]
@@ -83,7 +84,10 @@
 
    :gdp
    (fn [rate-value stocks]
-     stocks)})
+     stocks)
+   :war-preparation
+   (fn [rate-value stocks]
+     (assoc stocks :war-readiness (+ rate-value (stocks :war-readiness))))})
 
 (defn rand-normal [scale]
   (* scale
@@ -134,10 +138,11 @@
                :cultural-contact 0.1
                :political-stability 0.1
                :warlikeness 0.1
-               :gdp 1}
+               :gdp 1
+               :war-preparation 0.1}
 
               {:population 100
-               :war-readiness 0
+               :war-readiness 0.1
                :deforestation 0})
 
         big-tile
@@ -183,12 +188,14 @@
 
 (defn simple-test []
   (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
-                          :forest-gardening 0.2}
+                          :forest-gardening 0.2
+                          :bow-and-arrow 0.1}
 
                          base-rates ; simple rates
 
                          {:population 10 ; simple stocks
-                          :domestication-corn 0})
+                          :domestication-corn 0
+                          :war-readiness 0.1})
         simple-tile (Tile. [] [simple-pop])]
     (loop [tile simple-tile]
       (clojure.pprint/pprint tile)
