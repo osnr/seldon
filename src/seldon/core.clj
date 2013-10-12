@@ -123,21 +123,6 @@
                [big-pop])]
     big-tile))
 
-(defn simple-test []
-  (let [simple-pop (Pop. {:pastorialism 1
-                          :forest-gardening 2}
-
-                         {:fertility 100
-                          :mortality 200}
-
-                         {:population 10
-                          :domestication-corn 0})
-        simple-tile (Tile. [] [simple-pop])]
-    (loop [tile simple-tile]
-      (clojure.pprint/pprint tile)
-      (Thread/sleep 500)
-      (recur (step-tile tile)))))
-
 (defn step-memeome [memeome]
   (into {} (for [[meme value] memeome]
              [meme (+ value (rand-normal (/ 1 60)))])))
@@ -163,3 +148,17 @@
   (Tile. (:resources tile)
          (mapv (partial step-pop tile) (:pops tile))))
 
+(defn simple-test []
+  (let [simple-pop (Pop. {:pastorialism 1
+                          :forest-gardening 2}
+
+                         {:fertility 100
+                          :mortality 200}
+
+                         {:population 10
+                          :domestication-corn 0})
+        simple-tile (Tile. [] [simple-pop])]
+    (loop [tile simple-tile]
+      (clojure.pprint/pprint tile)
+      (Thread/sleep 500)
+      (recur (step-tile tile)))))
