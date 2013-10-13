@@ -52,7 +52,7 @@
           tile-height)))
 
 (defn draw [in]
-  (when (= 0 (mod (frame-count) 30))
+  (when (= 0 (mod (frame-count) 15))
     (let [grid (<!! in)]
       (let [circles
             (flatten (map-indexed
@@ -100,4 +100,4 @@
   :title "Seldon viewer"
   :setup setup
   :draw (partial draw (simple-test-proc))
-  :size [500 300])
+  :size [1200 900])
