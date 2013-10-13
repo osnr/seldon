@@ -38,7 +38,11 @@
   (doseq [tile-x (range 0 tile-w)
           tile-y (range 0 tile-h)
           :let [tile (get-in grid [tile-x tile-y])]]
-    (println (:aridity (:resources tile))
+    ;(println tile)
+    (fill (:pasture (:resources tile))
+          (:forest (:resources tile))
+          (:cropland (:resources tile)))
+    (println (:pasture (:resources tile))
           (:forest (:resources tile))
           (:cropland (:resources tile)))
     (stroke 255 255 255)
