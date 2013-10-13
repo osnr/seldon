@@ -3,7 +3,7 @@
             [clojure.core.async :refer [go <!!]]
             [quil.core :refer :all]))
 
-(def avg-radius 30)
+(def avg-radius 20)
 
 (def tile-width 100)
 (def tile-height 100)
@@ -30,17 +30,28 @@
   (fill-int fill-col alph)
   (ellipse x y (* 2 radius) (* 2 radius)))
 
+(defn draw-grid [tile-w tile-h]
+  (stroke 0 0 0)
+  (dotimes [tile-x tile-w]
+    (line (* tile-x tile-width) (height)
+          (* tile-x tile-width) 0))
+  (dotimes [tile-y tile-h]
+    (line 0 (* tile-y tile-height)
+          (height) (* tile-y tile-height)))
+  (no-stroke))
+
 (defn draw [in]
   (let [grid (<!! in)]
     (background 255)
+    (draw-grid (count grid)
+               (count (first grid)))
     (doall (map-indexed
             (fn [x col]
               (doall (map-indexed
                       (fn [y tile]
-                        (println ":pops tile" (:pops tile))
                         (doall (map-indexed
                                 (fn [i pop]
-                                  (println i)
+                                  ;; (println "POP" i pop)
                                   (draw-circle (pop->circle pop i x y)))
                                 (:pops tile))))
                       col)))

@@ -244,6 +244,11 @@
           resources
           pops))
 
+(defn step-tile [tile]
+  (let [pops (remove #(= 0 (:population (:stocks %))) (:pops tile))]
+    (Tile. (step-resources (:resources tile) pops)
+           (mapv (partial step-pop tile) pops))))
+
 (defn diffuse-pop [pop target-pop]
   (let [pop-weight (:population (:stocks pop))
         target-pop-weight (:population (:stocks target-pop))
@@ -258,21 +263,19 @@
           (:rates target-pop)
           (:stocks target-pop))))
 
-
-(defn step-tile [tile]
-  (let [pops (remove #(= 0 (:population (:stocks %))) (:pops tile))]
-    (Tile. (step-resources (:resources tile) pops)
-           (mapv (partial step-pop tile) pops))))
-
 (defn diffuse-grid-pop [grid [x y pop]]
   (reduce (fn [grid path]
-            (let [target-pop (get-in grid path)]
-              (if (or (= target-pop pop)
-                      (and (not= path [x y])
-                           (< (rand) 0.5)))
-                grid
-                (assoc-in grid path
-                          (diffuse-pop pop target-pop)))))
+            (let [target-tile (get-in grid path)
+                  target-pops (:pops target-tile)]
+              (assoc-in grid path
+                        (assoc target-tile
+                          :pops (mapv (fn [target-pop]
+                                        (if (or (= target-pop pop)
+                                                (and (not= path [x y])
+                                                     (< (rand) 0.5)))
+                                          target-pop
+                                          (diffuse-pop pop target-pop)))
+                                      target-pops)))))
           grid
           (for [dx [-1 0 1]
                 dy [-1 0 1]
@@ -283,9 +286,10 @@
 (defn diffuse-grid-pops [grid]
   (reduce diffuse-grid-pop
           grid
-          (for [x (range 0 (count grid))
-                y (range 0 (count (first grid)))]
-            [x y (get-in grid [x y])])))
+          (apply concat (for [x (range 0 (count grid))
+                              y (range 0 (count (first grid)))]
+                          (for [pop (:pops (get-in grid [x y]))]
+                            [x y pop])))))
 
 (defn step-grid [grid]
   (diffuse-grid-pops (mapv (partial mapv step-tile) grid)))
