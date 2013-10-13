@@ -5,10 +5,13 @@
 
 (def avg-radius 30)
 
+(def tile-width 100)
+(def tile-height 100)
+
 (defn pop->circle [pop i tile-x tile-y]
   (let [memome (:memome pop)]
-    {:x        (+ tile-x avg-radius (* avg-radius i))
-     :y        (+ tile-y avg-radius)
+    {:x        (+ (* tile-x tile-width) avg-radius (* avg-radius i))
+     :y        (+ (* tile-y tile-height) avg-radius)
      :radius   (:population (:stocks pop))
      :fill-col (color (* 255 (:pastorialism memome))
                       (* 255 (:forest-gardening memome))
@@ -28,12 +31,20 @@
   (ellipse x y (* 2 radius) (* 2 radius)))
 
 (defn draw [in]
-  (let [tile (<!! in)]
+  (let [grid (<!! in)]
     (background 255)
-    (let [idv (map vector (iterate inc 0)
-                   (:pops tile))]
-      (doseq [[i pop] idv]
-        (draw-circle (pop->circle pop i 0 0))))))
+    (doall (map-indexed
+            (fn [x col]
+              (doall (map-indexed
+                      (fn [y tile]
+                        (println ":pops tile" (:pops tile))
+                        (doall (map-indexed
+                                (fn [i pop]
+                                  (println i)
+                                  (draw-circle (pop->circle pop i x y)))
+                                (:pops tile))))
+                      col)))
+            grid))))
 
 (defsketch seldon
   :title "Seldon viewer"

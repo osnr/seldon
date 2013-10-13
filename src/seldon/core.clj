@@ -242,23 +242,37 @@
           (:rates target-pop)
           (:stocks target-pop))))
 
-(defn diffuse-pops [pops]
-  (reduce (fn [target-pops pop]
-            (map (fn [target-pop]
-                   (if (= target-pop pop)
-                     pop
-                     (diffuse-pop pop target-pop)))
-                 target-pops))
-          pops
-          pops))
 
 (defn step-tile [tile]
   (let [pops (remove #(= 0 (:population (:stocks %))) (:pops tile))]
     (Tile. (step-resources (:resources tile) pops)
-           (diffuse-pops (mapv (partial step-pop tile) pops)))))
+           (mapv (partial step-pop tile) pops))))
 
-(defn step-map [map]
-  )
+(defn diffuse-grid-pop [grid [x y pop]]
+  (reduce (fn [grid path]
+            (let [target-pop (get-in grid path)]
+              (if (or (= target-pop pop)
+                      (and (not= path [x y])
+                           (< (rand) 0.5)))
+                grid
+                (assoc-in grid path
+                          (diffuse-pop pop target-pop)))))
+          grid
+          (for [dx [-1 0 1]
+                dy [-1 0 1]
+                :let [path [(+ x dx) (+ y dy)]]
+                :when (get-in grid path)]
+            path)))
+
+(defn diffuse-grid-pops [grid]
+  (reduce diffuse-grid-pop
+          grid
+          (for [x (range 0 (count grid))
+                y (range 0 (count (first grid)))]
+            [x y (get-in grid [x y])])))
+
+(defn step-grid [grid]
+  (diffuse-grid-pops (mapv (partial mapv step-tile) grid)))
 
 (defn simple-test-proc []
   (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
@@ -290,14 +304,13 @@
                             :cropland 0.75}
                            [simple-pop simple-pop-2 simple-pop-3 simple-pop-4])
 
-        simple-map (vec (repeat 3 (vec (repeat 3 simple-tile))))
+        simple-grid (vec (repeat 3 (vec (repeat 3 simple-tile))))
 
         out (chan)]
-    (go (loop [tile simple-tile]
-          (>! out tile)
-          (clojure.pprint/pprint tile)
+    (go (loop [grid simple-grid]
+          (>! out grid)
           (Thread/sleep 500)
-          (recur (step-tile tile))))
+          (recur (step-grid grid))))
     out))
 
 (defn -main []
