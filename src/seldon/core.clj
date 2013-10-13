@@ -5,6 +5,9 @@
 
 (defrecord Pop [memome rates stocks])
 
+(defn weighted-average [a b a-weight b-weight]
+  (/ (+ (* a a-weight) (* b b-weight)) (+ a-weight b-weight)))
+
 (def base-rates
   {:fertility 2.0
    :mortality 0.5
@@ -13,7 +16,8 @@
    :political-stability 1
    :warlikeness 0.5
    :gdp 0.01
-   :war-preparation 0.1})
+   :war-preparation 0.1
+   :food-production 0})
 
 (defn agriculturalProductivity [tile]
   (tile :cropland))
@@ -21,22 +25,29 @@
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
-     (assoc rates :food-production (weighted-average 3 (rates :food-production) value 1)
-                  :war-preparation (+ value 2.0 (rates: war-preparation))))
+     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 4))
+                  :war-preparation (+ value 2 (rates :war-preparation))))
 
    :forest-gardening
    (fn [value rates tile stocks]
-     rates)
+     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 2))))
 
-   :agriculture (fn [value rates tile stocks]
-     (assoc rates :food-production (weighted-average (...) (rates :food-production) value 1)))
+   :agriculture (fn [value rates tile stocks] 
+     (let [oldforest ((tile :resources) :forest)
+           forestch (+ (rates :forest-change) (* value (stocks :population) -0.01))
+           newforest (+ oldforest forestch)
+           croplandch (max (- oldforest newforest) 0)]
+     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 8))
+                  :forest-change forestch
+                  :cropland-change croplandch)))
 
    :slash-and-burn (fn [value rates tile stocks] 
-     (assoc rates :food-production (...)
-                  :))
+     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 4))))
    :irrigation (fn [value rates tile stocks] rates)
    :crop-rotation (fn [value rates tile stocks] rates)
-   :hunter-gatherer (fn [value rates tile stocks] (assoc rates :food-production ))
+   :hunter-gatherer (fn [value rates tile stocks]
+     (assoc rates :food-production (+ (rates :food-production) (* value (stock :population) 1))
+                  :war-preparation (+ value 1 (rates :war-preparation))))
 
    :pseudo-writing (fn [value rates tile stocks] rates)
    :writing (fn [value rates tile stocks] rates)
@@ -131,7 +142,15 @@
 
    :war-preparation
    (fn [rate-value resources]
-     resources)})
+     resources)
+
+   :forest-change
+   (fn [rate-value resources]
+     (assoc resources :forest (+ (resources :forest) rate-value)))
+
+   :cropland-change
+   (fn [rate-value resources]
+     (assoc resources :cropland (+ (resources :cropland) rate-value)))})
 
 (defn rand-normal [scale]
   (* scale
@@ -238,9 +257,6 @@
                        (:rates pop)))
           resources
           pops))
-
-(defn weighted-average [a b a-weight b-weight]
-  (/ (+ (* a a-weight) (* b b-weight)) (+ a-weight b-weight)))
 
 (defn diffuse-pop [pop target-pop]
   (let [pop-weight (:population (:stocks pop))
