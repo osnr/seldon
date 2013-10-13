@@ -332,7 +332,6 @@
         out (chan)]
     (go (loop [grid simple-grid]
           (>! out grid)
-          (Thread/sleep 500)
           (recur (step-grid grid))))
     out))
 

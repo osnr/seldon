@@ -41,21 +41,23 @@
   (no-stroke))
 
 (defn draw [in]
-  (let [grid (<!! in)]
-    (background 255)
-    (draw-grid (count grid)
-               (count (first grid)))
-    (doall (map-indexed
-            (fn [x col]
-              (doall (map-indexed
-                      (fn [y tile]
-                        (doall (map-indexed
-                                (fn [i pop]
-                                  ;; (println "POP" i pop)
-                                  (draw-circle (pop->circle pop i x y)))
-                                (:pops tile))))
-                      col)))
-            grid))))
+  (when (= 0 (mod (frame-count) 30))
+    (let [grid (<!! in)]
+      (background 255)
+      (draw-grid (count grid)
+                 (count (first grid)))
+      (doall (map-indexed
+              (fn [x col]
+                (doall (map-indexed
+                        (fn [y tile]
+                          (doall (map-indexed
+                                  (fn [i pop]
+                                    ;; (println "POP" i pop)
+                                    (draw-circle (pop->circle pop i x y)))
+                                  (:pops tile))))
+                        col)))
+              grid))))
+  (println (mouse-x) (mouse-y)))
 
 (defsketch seldon
   :title "Seldon viewer"
