@@ -34,15 +34,18 @@
   (fill-int fill-col alph)
   (ellipse x y (* 2 radius) (* 2 radius)))
 
-(defn draw-grid [tile-w tile-h]
-  (stroke 0 0 0)
-  (dotimes [tile-x tile-w]
-    (line (* tile-x tile-width) (height)
-          (* tile-x tile-width) 0))
-  (dotimes [tile-y tile-h]
-    (line 0 (* tile-y tile-height)
-          (height) (* tile-y tile-height)))
-  (no-stroke))
+(defn draw-grid [grid tile-w tile-h]
+  (doseq [tile-x (range 0 tile-w)
+          tile-y (range 0 tile-h)
+          :let [tile (get-in grid [tile-x tile-y])]]
+    (println (:aridity (:resources tile))
+          (:forest (:resources tile))
+          (:cropland (:resources tile)))
+    (stroke 255 255 255)
+    (rect (* tile-x tile-width)
+          (* tile-y tile-height)
+          tile-width
+          tile-height)))
 
 (defn draw [in]
   (when (= 0 (mod (frame-count) 30))
@@ -70,13 +73,14 @@
                   avg-radius)
           pop (get (:pops (get-in grid [tile-x tile-y])) i)]
       (background 255)
-      (draw-grid (count grid)
+      (draw-grid grid
+                 (count grid)
                  (count (first grid)))
       (doseq [circle circles]
         (draw-circle circle))
       (when pop
         (let [radius (-radius pop)]
-          (stroke 0 0 0)
+          (stroke 255 255 255)
           (no-fill)
           (ellipse (+ (* tile-x tile-width) avg-radius (* avg-radius i))
                    (+ (* tile-y tile-height) avg-radius)
