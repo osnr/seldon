@@ -1,5 +1,8 @@
 (ns seldon.core
-  (:require [clojure.core.async :refer [>! <! alts! go alt! put! close! chan]]))
+  (:require [clojure.core.async :refer [>! <!! go chan]]))
+
+(defn weighted-average [a b a-weight b-weight]
+  (/ (+ (* a a-weight) (* b b-weight)) (+ a-weight b-weight)))
 
 (defrecord Tile [resources pops])
 
@@ -9,7 +12,6 @@
   {:fertility 2.0
    :mortality 0.5
    :pop-stability 1
-   :cultural-contact 0.5
    :political-stability 1
    :warlikeness 0.5
    :gdp 0.01
@@ -21,22 +23,20 @@
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
-     (assoc rates :food-production (weighted-average 3 (rates :food-production) value 1)
-                  :war-preparation (+ value 2.0 (rates: war-preparation))))
+     rates)
 
    :forest-gardening
    (fn [value rates tile stocks]
      rates)
 
    :agriculture (fn [value rates tile stocks]
-     (assoc rates :food-production (weighted-average (...) (rates :food-production) value 1)))
+                  rates)
 
    :slash-and-burn (fn [value rates tile stocks] 
-     (assoc rates :food-production (...)
-                  :))
+                     rates)
    :irrigation (fn [value rates tile stocks] rates)
    :crop-rotation (fn [value rates tile stocks] rates)
-   :hunter-gatherer (fn [value rates tile stocks] (assoc rates :food-production ))
+   :hunter-gatherer (fn [value rates tile stocks] rates)
 
    :pseudo-writing (fn [value rates tile stocks] rates)
    :writing (fn [value rates tile stocks] rates)
@@ -79,23 +79,20 @@
 
    :pop-stability
    (fn [rate-value stocks]
-     stocks)
-
-   :cultural-contact
-   (fn [rate-value stocks]
-     stocks)
+     stocks) ; TODO add 'outcasts' to stocks
 
    :political-stability
    (fn [rate-value stocks]
-     stocks)
+     stocks) ; TODO ??
 
    :warlikeness
    (fn [rate-value stocks]
-     stocks)
+     stocks) ; leads up to war (chance of war)
 
    :gdp
    (fn [rate-value stocks]
-     stocks)
+     stocks) ; TODO 'wealth' stock
+
    :war-preparation
    (fn [rate-value stocks]
      (assoc stocks :war-readiness (+ rate-value (stocks :war-readiness))))})
@@ -179,7 +176,6 @@
               {:fertility 1
                :mortality 1
                :pop-stability 1
-               :cultural-contact 0.1
                :political-stability 0.1
                :warlikeness 0.1
                :gdp 1
@@ -239,9 +235,6 @@
           resources
           pops))
 
-(defn weighted-average [a b a-weight b-weight]
-  (/ (+ (* a a-weight) (* b b-weight)) (+ a-weight b-weight)))
-
 (defn diffuse-pop [pop target-pop]
   (let [pop-weight (:population (:stocks pop))
         target-pop-weight (:population (:stocks target-pop))
@@ -271,7 +264,7 @@
     (Tile. (step-resources pops (:resources tile))
            (diffuse-pops (mapv (partial step-pop tile) pops)))))
 
-(defn simple-test []
+(defn simple-test-proc []
   (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
                           :forest-gardening 0.2
                           :bow-and-arrow 0.1}
@@ -281,14 +274,17 @@
                          {:population 10 ; simple stocks
                           :war-readiness 0.1})
 
-        simple-pop-2 (Pop. {:pastorialism 0.9 ; simple memes
-                            :forest-gardening 0.9
-                            :bow-and-arrow 0.5}
+        simple-pop-2 (-> simple-pop
+                         (assoc-in [:memome :pastorialism] 0.9)
+                         (assoc-in [:memome :forest-gardening] 0.9)
+                         (assoc-in [:memome :bow-and-arrow] 0.1))
 
-                           base-rates ; simple rates
+        simple-pop-3 (assoc-in simple-pop [:memome :pastorialism] 0.5)
 
-                           {:population 10 ; simple stocks
-                            :war-readiness 0.1})
+        simple-pop-4 (-> simple-pop
+                         (assoc-in [:stocks :population] 20)
+                         (assoc-in [:memome :pastorialism] 0.01)
+                         (assoc-in [:memome :forest-gardening] 0.01))
 
         simple-tile (Tile. {:forest 1
                             :elevation 0.5
@@ -296,7 +292,7 @@
                             :bronze 0.5
                             :iron 0.5
                             :cropland 0.75}
-                           [simple-pop simple-pop-2])
+                           [simple-pop simple-pop-2 simple-pop-3 simple-pop-4])
         out (chan)]
     (go (loop [tile simple-tile]
           (>! out tile)
@@ -304,3 +300,8 @@
           (Thread/sleep 500)
           (recur (step-tile tile))))
     out))
+
+(defn -main []
+  (let [in (simple-test-proc)]
+    (while true
+      (<!! in))))

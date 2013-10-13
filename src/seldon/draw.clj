@@ -1,5 +1,5 @@
 (ns seldon.draw
-  (:require [seldon.core :refer [simple-test]]
+  (:require [seldon.core :refer [simple-test-proc]]
             [clojure.core.async :refer [go <!!]]
             [quil.core :refer :all]))
 
@@ -38,5 +38,5 @@
 (defsketch seldon
   :title "Seldon viewer"
   :setup setup
-  :draw (partial draw (simple-test))
+  :draw (partial draw (simple-test-proc))
   :size [500 300])
