@@ -14,17 +14,25 @@
    :gdp 0.01
    :war-preparation 0.1})
 
+(defn agriculturalProductivity [tile]
+  (tile :cropland))
+
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
-     (assoc rates :food-production (rates :food-production) 
+     (assoc rates :food-production (weighted-average 3 (rates :food-production) value 1)
                   :war-preparation (+ value 2.0 (rates: war-preparation))))
 
    :forest-gardening
    (fn [value rates tile stocks]
      rates)
-   :agriculture (fn [value rates tile stocks] rates)
-   :slash-and-burn (fn [value rates tile stocks] rates)
+
+   :agriculture (fn [value rates tile stocks]
+     (assoc rates :food-production (weighted-average (...) (rates :food-production) value 1)))
+
+   :slash-and-burn (fn [value rates tile stocks] 
+     (assoc rates :food-production (...)
+                  :))
    :irrigation (fn [value rates tile stocks] rates)
    :crop-rotation (fn [value rates tile stocks] rates)
    :hunter-gatherer (fn [value rates tile stocks] (assoc rates :food-production ))
@@ -141,17 +149,21 @@
                :political-stability 0.1
                :warlikeness 0.1
                :gdp 1
-               :war-preparation 0.1}
+               :war-preparation 0.1
+               :forest-change 0
+               :cropland-change 0}
 
               {:population 100
                :war-readiness 0.1
-               :deforestation 0})
+               })
 
         big-tile
-        (Tile. {:forest 1
+        (Tile. {:forest 0.75
                 :bronze 0.5
                 :iron 0.5
-                :cropland 0.75}
+                :cropland 0.25
+                :elevation 0 ;0=low, 1=hills, 2=mountains
+                :wetness 1}
                [big-pop])]
     big-tile))
 
