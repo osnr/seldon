@@ -15,7 +15,7 @@
      :radius   (:population (:stocks pop))
      :fill-col (color (* 255 (:pastorialism memome))
                       (* 255 (:forest-gardening memome))
-                      (* 255 (:bow-and-arrow memome)))
+                      (* 255 (:agriculture memome)))
      :alph     255}))
 
 (defn setup []

@@ -22,17 +22,27 @@
    :gdp 0.01
 
    :forest-change 0
-   :cropland-change 0})
+   :cropland-change 0
+   :pasture-change 0})
 
 (defn agriculturalProductivity [tile]
-  (tile :cropland))
+  ((:resources tile) :cropland))
+
+(defn pastoralProductivity [tile]
+  ((:resources tile) :pasture))
 
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
+     (let [oldcropland ((:resources tile) :cropland)
+           croplandch (+ (rates :cropland-change) (* value (stocks :population) -0.01))
+           newcropland (+ oldcropland croplandch)
+           pasturech (max (- oldcropland newcropland) 0)]
      (assoc rates :food-production (+ (rates :food-production)
-                                      (min (* value 20) (* value (stocks :population) 2)))
-                  :war-preparation (+ (* value 2) (rates :war-preparation))))
+                                      (min (* value 20 (pastoralProductivity tile)) (* value (stocks :population) 2 (pastoralProductivity tile))))
+                  :war-preparation (+ (* value 2) (rates :war-preparation))
+                  :cropland-change croplandch
+                  :pasture-change pasturech)))
 
    :forest-gardening
    (fn [value rates tile stocks]
@@ -41,14 +51,15 @@
                            (min (* value 15) (* value (stocks :population) 2)))))
 
    :agriculture (fn [value rates tile stocks] 
-     (let [oldforest ((tile :resources) :forest)
+     (let [oldforest ((:resources tile) :forest)
            forestch (+ (rates :forest-change) (* value (stocks :population) -0.01))
            newforest (+ oldforest forestch)
            croplandch (max (- oldforest newforest) 0)]
        (assoc rates
-         :food-production (+ (rates :food-production) (* value (stocks :population) 8))
+         :food-production (+ (rates :food-production) 
+                             (min (* value 200 (agriculturalProductivity tile)) (* value (stocks :population) 8 (agriculturalProductivity tile))))
          :forest-change forestch
-         :cropland-changecroplandch)))
+         :cropland-change croplandch)))
 
    :slash-and-burn (fn [value rates tile stocks] 
      (assoc rates :food-production (+ (rates :food-production)
@@ -131,7 +142,11 @@
    :cropland-change
    (fn [rate-value resources]
      (assoc resources :cropland (+ (resources :cropland)
-                                   rate-value)))})
+                                   rate-value)))
+   
+   :pasture-change
+   (fn [rate-value resources]
+     (assoc resources :pasture (+ (resources :pasture))))})
 
 (defn rand-normal [scale]
   (* scale
@@ -186,7 +201,8 @@
                :gdp 1
                :war-preparation 0.1
                :forest-change 0
-               :cropland-change 0}
+               :cropland-change 0
+               :pasture-change 0}
 
               {:population 100
                :war-readiness 0.1
@@ -194,19 +210,20 @@
                })
 
         big-tile
-        (Tile. {:forest 1
+        (Tile. {:forest 0.50
                 :elevation 0.5
                 :aridity 0.5
                 :bronze 0.5
                 :iron 0.5
                 :cropland 0.25
+                :pasture 0.25
                 :wetness 1}
                [big-pop])]
     big-tile))
 
 (defn step-memome [tile memome]
   (into {} (for [[meme value] memome]
-             [meme (max 0
+             [meme (max 0.001
                         (min 1
                              (+ value (rand-normal (/ 1.0 60.0)))))])))
 
@@ -257,8 +274,8 @@
     (Pop. (into {} (map #(vector (first %1)
                                  (weighted-average (second %1)
                                                    (second %2)
-                                                   pop-weight
-                                                   target-pop-weight))
+                                                    pop-weight 
+                                                   (Math/pow target-pop-weight 25)))
                         (:memome pop) (:memome target-pop)))
           (:rates target-pop)
           (:stocks target-pop))))
@@ -292,11 +309,12 @@
                             [x y pop])))))
 
 (defn step-grid [grid]
-  (diffuse-grid-pops (mapv (partial mapv step-tile) grid)))
+  (time (diffuse-grid-pops (mapv (partial mapv step-tile) grid))))
 
 (defn simple-test-proc []
   (let [simple-pop (Pop. {:pastorialism 0.5 ; simple memes
                           :forest-gardening 0.5
+                          :agriculture 0
                           :bow-and-arrow 0.1
                           :fertility-modifier 1.0}
 
@@ -319,20 +337,21 @@
                          (assoc-in [:memome :forest-gardening] 0.0)
                          (assoc-in [:memome :fertility-modifier] 0.33))
 
-        simple-tile (Tile. {:forest 1
+        simple-tile (Tile. {:forest 0.5
                             :elevation 0.5
                             :aridity 0.5
                             :bronze 0.5
                             :iron 0.5
-                            :cropland 0.75}
+                            :cropland 0.25
+                            :pasture 0.25}
                            [simple-pop simple-pop-2 simple-pop-3 simple-pop-4])
 
-        simple-grid (vec (repeat 3 (vec (repeat 3 simple-tile))))
+        simple-grid (vec (repeat 9 (vec (repeat 9 simple-tile))))
 
         out (chan)]
     (go (loop [grid simple-grid]
           (>! out grid)
-          (Thread/sleep 500)
+          (Thread/sleep 100)
           (recur (step-grid grid))))
     out))
 
