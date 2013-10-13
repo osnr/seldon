@@ -21,7 +21,7 @@
    :food-production 0
    :gdp 0.01
 
-   :forest-change 0
+   :forest-change 0.000
    :cropland-change 0
    :pasture-change 0})
 
@@ -31,35 +31,40 @@
 (defn pastoralProductivity [tile]
   ((:resources tile) :pasture))
 
+(defn gardeningProductivity [tile]
+  ((:resources tile) :forest))
+
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
      (let [oldcropland ((:resources tile) :cropland)
-           croplandch (+ (rates :cropland-change) (* value (stocks :population) -0.01))
+           croplandch (+ (rates :cropland-change) (* value (stocks :population) -0.0001))
            newcropland (+ oldcropland croplandch)
            pasturech (max (- oldcropland newcropland) 0)]
      (assoc rates :food-production (+ (rates :food-production)
-                                      (min (* value 20 (pastoralProductivity tile)) (* value (stocks :population) 2 (pastoralProductivity tile))))
+                                      (min (* value 2000 (pastoralProductivity tile)) (* value (stocks :population) 4 (pastoralProductivity tile))))
                   :war-preparation (+ (* value 2) (rates :war-preparation))
                   :cropland-change croplandch
-                  :pasture-change pasturech)))
+                  :pasture-change (* -1 croplandch))))
 
    :forest-gardening
    (fn [value rates tile stocks]
      (assoc rates
        :food-production (+ (rates :food-production)
-                           (min (* value 15) (* value (stocks :population) 2)))))
+                           (min (* value 1000 (gardeningProductivity tile)) (* value (stocks :population) 2 (gardeningProductivity tile))))))
 
    :agriculture (fn [value rates tile stocks] 
      (let [oldforest ((:resources tile) :forest)
-           forestch (+ (rates :forest-change) (* value (stocks :population) -0.01))
+           forestch (+ (rates :forest-change) (* value (stocks :population) -0.00005))
            newforest (+ oldforest forestch)
-           croplandch (max (- oldforest newforest) 0)]
+           croplandch (max (- oldforest newforest) 0)
+           pasturech (+ (rates :pasture-change) (* value (stocks :population) -0.0001))]
        (assoc rates
          :food-production (+ (rates :food-production) 
-                             (min (* value 200 (agriculturalProductivity tile)) (* value (stocks :population) 8 (agriculturalProductivity tile))))
+                             (min (* value 20000 (agriculturalProductivity tile)) (* value (stocks :population) 8 (agriculturalProductivity tile))))
          :forest-change forestch
-         :cropland-change croplandch)))
+         :cropland-change (- (- 0 forestch) pasturech)
+         :pasture-change pasturech)))
 
    :slash-and-burn (fn [value rates tile stocks] 
      (assoc rates :food-production (+ (rates :food-production)
@@ -257,24 +262,24 @@
   (time (diffuse-grid-pops (mapv (partial mapv step-tile) grid))))
 
 (defn simple-test-proc []
-  (let [simple-pop (Pop. {:pastorialism 0.5 ; simple memes
+  (let [simple-pop (Pop. {:pastorialism 0.75 ; simple memes
                           :forest-gardening 0.5
-                          :agriculture 0.5
-                          :fertility-modifier 1.0}
+                          :agriculture 0.25
+                          :fertility-modifier 0.3}
 
                          base-rates ; simple rates
 
-                         {:population 2 ; simple stocks
+                         {:population 200 ; simple stocks
                           :war-readiness 0.1
                           :wealth 0})
 
-        simple-tile (Tile. {:forest 0.5
+        simple-tile (Tile. {:forest 0.0
                             :elevation 0.5
                             :aridity 0.5
                             :bronze 0.5
                             :iron 0.5
                             :cropland 0.25
-                            :pasture 0.25}
+                            :pasture 0.75}
                            (vec (repeat 4 simple-pop)))
 
         simple-grid (vec (repeat 9 (vec (repeat 9 simple-tile))))

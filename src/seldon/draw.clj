@@ -9,7 +9,7 @@
 (def tile-height 100)
 
 (defn -radius [pop]
-  (/ (:population (:stocks pop)) 5))
+  (/ (:population (:stocks pop)) 250))
 
 (defn pop->circle [pop i tile-x tile-y]
   (let [memome (:memome pop)]
