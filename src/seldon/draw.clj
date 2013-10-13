@@ -22,7 +22,8 @@
   (background 255)
   (smooth)
   (stroke-weight 1)
-  (fill-int 150 50))
+  (fill-int 150 50)
+  (set-state! :grid (atom {})))
 
 (defn draw-circle
   [{:keys [x y radius fill-col alph]}]
@@ -43,21 +44,42 @@
 (defn draw [in]
   (when (= 0 (mod (frame-count) 30))
     (let [grid (<!! in)]
-      (background 255)
-      (draw-grid (count grid)
-                 (count (first grid)))
-      (doall (map-indexed
-              (fn [x col]
-                (doall (map-indexed
-                        (fn [y tile]
-                          (doall (map-indexed
-                                  (fn [i pop]
-                                    ;; (println "POP" i pop)
-                                    (draw-circle (pop->circle pop i x y)))
-                                  (:pops tile))))
-                        col)))
-              grid))))
-  (println (mouse-x) (mouse-y)))
+      (swap! (state :grid) (constantly grid))))
+
+  (when-let [grid @(state :grid)]
+    (background 255)
+    (draw-grid (count grid)
+               (count (first grid)))
+    (doall (map-indexed
+            (fn [x col]
+              (doall (map-indexed
+                      (fn [y tile]
+                        (doall (map-indexed
+                                (fn [i pop]
+                                  ;; (println "POP" i pop)
+                                  (draw-circle (pop->circle pop i x y)))
+                                (:pops tile))))
+                      col)))
+            grid))
+    (let [mx (mouse-x) my (mouse-y)
+          tile-x (quot mx tile-width)
+          tile-y (quot my tile-height)
+          i (quot (- mx (* tile-x tile-width)
+                     (/ avg-radius 2))
+                  avg-radius)
+          pop (get (:pops (get-in grid [tile-x tile-y])) i)]
+      (when pop
+        (let [radius (:population (:stocks pop))]
+          (stroke 0 0 0)
+          (ellipse (+ (* tile-x tile-width) avg-radius (* avg-radius i))
+                   (+ (* tile-y tile-height) avg-radius)
+                   (* 2 radius)
+                   (* 2 radius))
+          (no-stroke)
+          (fill-int (color 0 0 0) 255)
+          (text (with-out-str (clojure.pprint/pprint pop))
+                (- (width) 300)
+                20))))))
 
 (defsketch seldon
   :title "Seldon viewer"
