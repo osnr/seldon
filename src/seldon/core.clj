@@ -17,7 +17,8 @@
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
-     rates)
+     (assoc rates :food-production (rates :food-production) 
+                  :war-preparation (+ value 2.0 (rates: war-preparation))))
 
    :forest-gardening
    (fn [value rates tile stocks]
@@ -26,14 +27,15 @@
    :slash-and-burn (fn [value rates tile stocks] rates)
    :irrigation (fn [value rates tile stocks] rates)
    :crop-rotation (fn [value rates tile stocks] rates)
+   :hunter-gatherer (fn [value rates tile stocks] (assoc rates :food-production ))
 
    :pseudo-writing (fn [value rates tile stocks] rates)
    :writing (fn [value rates tile stocks] rates)
    :alphabetic-writing (fn [value rates tile stocks] rates)
 
-   :bow-and-arrow (fn [value rates tile stocks] (assoc rates :war-preparation (* value 1.5 (rates :war-preparation))))
-   :bronze-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (* value 2.0 (rates :war-preparation))))
-   :iron-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (* value 2.0 (rates :war-preparation))))
+   :bow-and-arrow (fn [value rates tile stocks] (assoc rates :war-preparation (+ value 1.5 (rates :war-preparation))))
+   :bronze-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+   :iron-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
 
    :slavery (fn [value rates tile stocks] (assoc rates :warlikeness (* value 1.5 (rates :warlikeness)) ) )
    :class-structure (fn [value rates tile stocks] rates)
