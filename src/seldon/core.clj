@@ -253,9 +253,12 @@
           pops))
 
 (defn step-tile [tile]
-  (let [pops (:pops tile)]
+  (let [pops (remove #(= 0 (:population (:stocks %))) (:pops tile))]
     (Tile. (step-resources (:resources tile) pops)
            (diffuse-pops (mapv (partial step-pop tile) pops)))))
+
+(defn step-map [map]
+  )
 
 (defn simple-test-proc []
   (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
@@ -286,6 +289,9 @@
                             :iron 0.5
                             :cropland 0.75}
                            [simple-pop simple-pop-2 simple-pop-3 simple-pop-4])
+
+        simple-map (vec (repeat 3 (vec (repeat 3 simple-tile))))
+
         out (chan)]
     (go (loop [tile simple-tile]
           (>! out tile)
