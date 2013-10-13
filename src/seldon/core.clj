@@ -181,10 +181,37 @@
           rates
           stocks)))
 
+(defn weighted-average [a b a-weight b-weight]
+  (/ (+ (* a a-weight) (* b b-weight)) (+ a-weight b-weight)))
+
+(defn diffuse-pop [pop target-pop]
+  (let [pop-weight (:population (:stocks pop))
+        target-pop-weight (:population (:stocks target-pop))
+        pop-memome (:memome pop)
+        target-pop-memome (:memome target-pop)]
+    (Pop. (into {} (map #(vector (first %1)
+                                 (weighted-average (second %1)
+                                                   (second %2)
+                                                   pop-weight
+                                                   target-pop-weight))
+                        (:memome pop) (:memome target-pop)))
+          (:rates target-pop)
+          (:stocks target-pop))))
+
+(defn diffuse-pops [pops]
+  (reduce (fn [target-pops pop]
+            (map (fn [target-pop]
+                   (if (= target-pop pop)
+                     pop
+                     (diffuse-pop pop target-pop)))
+                 target-pops))
+          pops
+          pops))
+
 (defn step-tile [tile]
   ; TODO (calculate state of tile based on stocks, regrowth rates, etc)
   (Tile. (:resources tile)
-         (mapv (partial step-pop tile) (:pops tile))))
+         (diffuse-pops (mapv (partial step-pop tile) (:pops tile)))))
 
 (defn simple-test []
   (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
@@ -196,7 +223,19 @@
                          {:population 10 ; simple stocks
                           :domestication-corn 0
                           :war-readiness 0.1})
-        simple-tile (Tile. [] [simple-pop])]
+
+        simple-pop-2 (Pop. {:pastorialism 0.9 ; simple memes
+                            :forest-gardening 0.9
+                            :bow-and-arrow 0.5}
+
+                           base-rates ; simple rates
+
+                           {:population 10 ; simple stocks
+                            :domestication-corn 0
+                            :war-readiness 0.1})
+
+        simple-tile (Tile. [] [simple-pop
+                               simple-pop-2])]
     (loop [tile simple-tile]
       (clojure.pprint/pprint tile)
       (Thread/sleep 500)
