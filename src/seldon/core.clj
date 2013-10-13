@@ -31,14 +31,14 @@
   {:pastorialism
    (fn [value rates tile stocks]
      (assoc rates :food-production (+ (rates :food-production)
-                                      (* value (stocks :population) 4))
-                  :war-preparation (+ value 2 (rates :war-preparation))))
+                                      (min (* value 20) (* value (stocks :population) 2)))
+                  :war-preparation (+ (* value 2) (rates :war-preparation))))
 
    :forest-gardening
    (fn [value rates tile stocks]
      (assoc rates
        :food-production (+ (rates :food-production)
-                           (* value (stocks :population) 2))))
+                           (min (* value 15) (* value (stocks :population) 2)))))
 
    :agriculture (fn [value rates tile stocks] 
      (let [oldforest ((tile :resources) :forest)
@@ -48,7 +48,7 @@
        (assoc rates
          :food-production (+ (rates :food-production) (* value (stocks :population) 8))
          :forest-change forestch
-         :cropland-change croplandch)))
+         :cropland-changecroplandch)))
 
    :slash-and-burn (fn [value rates tile stocks] 
      (assoc rates :food-production (+ (rates :food-production)
@@ -56,18 +56,18 @@
    :hunter-gatherer (fn [value rates tile stocks]
      (assoc rates :food-production (+ (rates :food-production)
                                       (* value (stocks :population) 1))
-            :war-preparation (+ value 1
+            :war-preparation (+ (* value 1)
                                 (rates :war-preparation))))
 
    :bow-and-arrow
    (fn [value rates tile stocks]
-     (assoc rates :war-preparation (+ value 1.5 (rates :war-preparation))))
+     (assoc rates :war-preparation (+ (* value 1.5) (rates :war-preparation))))
    :bronze-weapons
    (fn [value rates tile stocks]
-     (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+     (assoc rates :war-preparation (+ (* value 2.0) (rates :war-preparation))))
    :iron-weapons
    (fn [value rates tile stocks]
-     (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+     (assoc rates :war-preparation (+ (* value 2.0) (rates :war-preparation))))
 
    :slavery
    (fn [value rates tile stocks]
@@ -75,7 +75,11 @@
 
    :human-sacrifice
    (fn [value rates tile stocks]
-     (assoc rates :warlikeness (* value 2.0 (rates :warlikeness))))})
+     (assoc rates :warlikeness (* value 2.0 (rates :warlikeness))))
+   
+   :fertility-modifier
+   (fn [value rates tile stocks]
+     (assoc rates :fertility (* (/ 1 value) (rates :fertility))))})
 
 (def rate->stocks
   {:fertility
@@ -107,7 +111,16 @@
    :war-preparation
    (fn [rate-value stocks]
      (assoc stocks :war-readiness (+ rate-value
-                                     (stocks :war-readiness))))})
+                                     (stocks :war-readiness))))
+   :food-production
+   (fn [rate-value stocks]
+     (let [dif (- rate-value (stocks :population))]
+     (assoc stocks :population (if (< dif 0)
+                                 (+ (stocks :population) dif)
+                                 (stocks :population))
+                   :wealth (if (> dif 0)
+                             (+ (stocks :wealth) dif)
+                             (stocks :wealth)))))})
 
 (def rate->resources
   {:forest-change
@@ -158,13 +171,15 @@
                :holy-sites 0.1
                :animal-sacrifice 0.1
                :human-sacrifice 0.1
+               
+               :fertility-modifier 1.0
 
                :small-boats 0.1
                :sailing 0.1
                :paved-roads 0.1}
 
-              {:fertility 1
-               :mortality 1
+              {:fertility 2
+               :mortality 0.5
                :pop-stability 1
                :political-stability 0.1
                :warlikeness 0.1
@@ -175,6 +190,7 @@
 
               {:population 100
                :war-readiness 0.1
+               :wealth 0
                })
 
         big-tile
@@ -275,26 +291,29 @@
   (diffuse-grid-pops (mapv (partial mapv step-tile) grid)))
 
 (defn simple-test-proc []
-  (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
-                          :forest-gardening 0.2
-                          :bow-and-arrow 0.1}
+  (let [simple-pop (Pop. {:pastorialism 0.5 ; simple memes
+                          :forest-gardening 0.5
+                          :bow-and-arrow 0.1
+                          :fertility-modifier 1.0}
 
                          base-rates ; simple rates
 
-                         {:population 10 ; simple stocks
-                          :war-readiness 0.1})
+                         {:population 2 ; simple stocks
+                          :war-readiness 0.1
+                          :wealth 0})
 
         simple-pop-2 (-> simple-pop
-                         (assoc-in [:memome :pastorialism] 0.9)
-                         (assoc-in [:memome :forest-gardening] 0.9)
+                         (assoc-in [:memome :pastorialism] 0.0)
+                         (assoc-in [:memome :forest-gardening] 1.0)
                          (assoc-in [:memome :bow-and-arrow] 0.1))
 
-        simple-pop-3 (assoc-in simple-pop [:memome :pastorialism] 0.5)
+        simple-pop-3 (assoc-in simple-pop [:memome :pastorialism] 1.0)
 
         simple-pop-4 (-> simple-pop
-                         (assoc-in [:stocks :population] 20)
-                         (assoc-in [:memome :pastorialism] 0.01)
-                         (assoc-in [:memome :forest-gardening] 0.01))
+                         (assoc-in [:stocks :population] 2)
+                         (assoc-in [:memome :pastorialism] 1.0)
+                         (assoc-in [:memome :forest-gardening] 0.0)
+                         (assoc-in [:memome :fertility-modifier] 0.33))
 
         simple-tile (Tile. {:forest 1
                             :elevation 0.5
