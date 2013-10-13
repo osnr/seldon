@@ -32,7 +32,7 @@
    (fn [value rates tile stocks]
      (assoc rates :food-production (+ (rates :food-production)
                                       (* value (stocks :population) 4))
-                  :war-preparation (+ value 2 (rates :war-preparation))))
+                  :war-preparation (+ (* value 2) (rates :war-preparation))))
 
    :forest-gardening
    (fn [value rates tile stocks]
@@ -56,18 +56,18 @@
    :hunter-gatherer (fn [value rates tile stocks]
      (assoc rates :food-production (+ (rates :food-production)
                                       (* value (stocks :population) 1))
-            :war-preparation (+ value 1
+            :war-preparation (+ (* value 1)
                                 (rates :war-preparation))))
 
    :bow-and-arrow
    (fn [value rates tile stocks]
-     (assoc rates :war-preparation (+ value 1.5 (rates :war-preparation))))
+     (assoc rates :war-preparation (+ (* value 1.5) (rates :war-preparation))))
    :bronze-weapons
    (fn [value rates tile stocks]
-     (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+     (assoc rates :war-preparation (+ (* value 2.0) (rates :war-preparation))))
    :iron-weapons
    (fn [value rates tile stocks]
-     (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+     (assoc rates :war-preparation (+ (* value 2.0) (rates :war-preparation))))
 
    :slavery
    (fn [value rates tile stocks]
@@ -107,7 +107,16 @@
    :war-preparation
    (fn [rate-value stocks]
      (assoc stocks :war-readiness (+ rate-value
-                                     (stocks :war-readiness))))})
+                                     (stocks :war-readiness))))
+   :food-production
+   (fn [rate-value stocks]
+     (let [dif (- rate-value (stocks :population))]
+     (assoc stocks :population (if (< dif 0)
+                                 (+ (stocks :population) dif)
+                                 (stocks :population))
+                   :wealth (if (> dif 0)
+                             (+ (stocks :wealth) dif)
+                             (stocks :wealth)))))})
 
 (def rate->resources
   {:forest-change
@@ -175,6 +184,7 @@
 
               {:population 100
                :war-readiness 0.1
+               :wealth 0
                })
 
         big-tile
@@ -265,7 +275,8 @@
                          base-rates ; simple rates
 
                          {:population 10 ; simple stocks
-                          :war-readiness 0.1})
+                          :war-readiness 0.1
+                          :wealth 0})
 
         simple-pop-2 (-> simple-pop
                          (assoc-in [:memome :pastorialism] 0.9)
