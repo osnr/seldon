@@ -11,12 +11,18 @@
 (def base-rates
   {:fertility 2.0
    :mortality 0.5
+
    :pop-stability 1
    :political-stability 1
+
    :warlikeness 0.5
-   :gdp 0.01
    :war-preparation 0.1
-   :food-production 0})
+
+   :food-production 0
+   :gdp 0.01
+
+   :forest-change 0
+   :cropland-change 0})
 
 (defn agriculturalProductivity [tile]
   (tile :cropland))
@@ -24,68 +30,63 @@
 (def meme->rates
   {:pastorialism
    (fn [value rates tile stocks]
-     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 4))
+     (assoc rates :food-production (+ (rates :food-production)
+                                      (* value (stocks :population) 4))
                   :war-preparation (+ value 2 (rates :war-preparation))))
 
    :forest-gardening
    (fn [value rates tile stocks]
-     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 2))))
+     (assoc rates
+       :food-production (+ (rates :food-production)
+                           (* value (stocks :population) 2))))
 
    :agriculture (fn [value rates tile stocks] 
      (let [oldforest ((tile :resources) :forest)
            forestch (+ (rates :forest-change) (* value (stocks :population) -0.01))
            newforest (+ oldforest forestch)
            croplandch (max (- oldforest newforest) 0)]
-     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 8))
-                  :forest-change forestch
-                  :cropland-change croplandch)))
+       (assoc rates
+         :food-production (+ (rates :food-production) (* value (stocks :population) 8))
+         :forest-change forestch
+         :cropland-change croplandch)))
 
    :slash-and-burn (fn [value rates tile stocks] 
-     (assoc rates :food-production (+ (rates :food-production) (* value (stocks :population) 4))))
-   :irrigation (fn [value rates tile stocks] rates)
-   :crop-rotation (fn [value rates tile stocks] rates)
+     (assoc rates :food-production (+ (rates :food-production)
+                                      (* value (stocks :population) 4))))
    :hunter-gatherer (fn [value rates tile stocks]
-     (assoc rates :food-production (+ (rates :food-production) (* value (stock :population) 1))
-                  :war-preparation (+ value 1 (rates :war-preparation))))
+     (assoc rates :food-production (+ (rates :food-production)
+                                      (* value (stocks :population) 1))
+            :war-preparation (+ value 1
+                                (rates :war-preparation))))
 
-   :pseudo-writing (fn [value rates tile stocks] rates)
-   :writing (fn [value rates tile stocks] rates)
-   :alphabetic-writing (fn [value rates tile stocks] rates)
+   :bow-and-arrow
+   (fn [value rates tile stocks]
+     (assoc rates :war-preparation (+ value 1.5 (rates :war-preparation))))
+   :bronze-weapons
+   (fn [value rates tile stocks]
+     (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+   :iron-weapons
+   (fn [value rates tile stocks]
+     (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
 
-   :bow-and-arrow (fn [value rates tile stocks] (assoc rates :war-preparation (+ value 1.5 (rates :war-preparation))))
-   :bronze-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
-   :iron-weapons (fn [value rates tile stocks] (assoc rates :war-preparation (+ value 2.0 (rates :war-preparation))))
+   :slavery
+   (fn [value rates tile stocks]
+     (assoc rates :warlikeness (* value 1.5 (rates :warlikeness))))
 
-   :slavery (fn [value rates tile stocks] (assoc rates :warlikeness (* value 1.5 (rates :warlikeness)) ) )
-   :class-structure (fn [value rates tile stocks] rates)
-   :cities (fn [value rates tile stocks] rates)
-
-   :bazaar-economy (fn [value rates tile stocks] rates)
-   :state-planning (fn [value rates tile stocks] rates)
-   :value-gold (fn [value rates tile stocks] rates)
-   :value-silver (fn [value rates tile stocks] rates)
-
-   :shamanic (fn [value rates tile stocks] rates)
-   :pantheon-of-gods (fn [value rates tile stocks] rates)
-   :one-god (fn [value rates tile stocks] rates)
-   :revelation (fn [value rates tile stocks] rates)
-   :state-priesthood (fn [value rates tile stocks] rates)
-   :holy-sites (fn [value rates tile stocks] rates)
-   :animal-sacrifice (fn [value rates tile stocks] rates)
-   :human-sacrifice (fn [value rates tile stocks] (assoc rates :warlikeness (* value 2.0 (rates :warlikeness))))
-
-   :small-boats (fn [value rates tile stocks] rates)
-   :sailing (fn [value rates tile stocks] rates)
-   :paved-roads (fn [value rates tile stocks] rates)})
+   :human-sacrifice
+   (fn [value rates tile stocks]
+     (assoc rates :warlikeness (* value 2.0 (rates :warlikeness))))})
 
 (def rate->stocks
   {:fertility
    (fn [rate-value stocks]
-     (assoc stocks :population (+ (stocks :population) (* rate-value (/ (stocks :population) 2) ))))
+     (assoc stocks :population (+ (stocks :population)
+                                  (* rate-value (/ (stocks :population) 2) ))))
 
    :mortality
    (fn [rate-value stocks]
-     (assoc stocks :population (* (- 1 rate-value) (stocks :population)) ))
+     (assoc stocks :population (* (- 1 rate-value)
+                                  (stocks :population)) ))
 
    :pop-stability
    (fn [rate-value stocks]
@@ -105,48 +106,19 @@
 
    :war-preparation
    (fn [rate-value stocks]
-     (assoc stocks :war-readiness (+ rate-value (stocks :war-readiness))))})
+     (assoc stocks :war-readiness (+ rate-value
+                                     (stocks :war-readiness))))})
 
 (def rate->resources
-  {:fertility
+  {:forest-change
    (fn [rate-value resources]
-     resources)
-
-   :mortality
-   (fn [rate-value resources]
-     resources)
-
-   :pop-stability
-   (fn [rate-value resources]
-     resources)
-
-   :cultural-contact
-   (fn [rate-value resources]
-     resources)
-
-   :political-stability
-   (fn [rate-value resources]
-     resources)
-
-   :warlikeness
-   (fn [rate-value resources]
-     resources)
-
-   :gdp
-   (fn [rate-value resources]
-     resources)
-
-   :war-preparation
-   (fn [rate-value resources]
-     resources)
-
-   :forest-change
-   (fn [rate-value resources]
-     (assoc resources :forest (+ (resources :forest) rate-value)))
+     (assoc resources :forest (+ (resources :forest)
+                                 rate-value)))
 
    :cropland-change
    (fn [rate-value resources]
-     (assoc resources :cropland (+ (resources :cropland) rate-value)))})
+     (assoc resources :cropland (+ (resources :cropland)
+                                   rate-value)))})
 
 (defn rand-normal [scale]
   (* scale
@@ -226,13 +198,15 @@
   (let [stocks (:stocks pop)
         rates (:rates pop)]
     (reduce-kv (fn [rates meme value]
-                 ((meme->rates meme) value rates tile stocks))
+                 ((meme->rates meme (constantly rates))
+                  value rates tile stocks))
                base-rates
                memome)))
 
 (defn step-stocks [rates stocks]
   (reduce-kv (fn [stocks rate rate-value]
-               ((rate->stocks rate) rate-value stocks))
+               ((rate->stocks rate (constantly stocks))
+                rate-value stocks))
              stocks
              rates))
 
@@ -247,7 +221,8 @@
 (defn step-resources [resources pops]
   (reduce (fn [resources pop]
             (reduce-kv (fn [resources rate rate-value]
-                         ((rate->resources rate) rate-value resources))
+                         ((rate->resources rate (constantly resources))
+                          rate-value resources))
                        resources
                        (:rates pop)))
           resources
@@ -279,7 +254,7 @@
 
 (defn step-tile [tile]
   (let [pops (:pops tile)]
-    (Tile. (step-resources pops (:resources tile))
+    (Tile. (step-resources (:resources tile) pops)
            (diffuse-pops (mapv (partial step-pop tile) pops)))))
 
 (defn simple-test-proc []
