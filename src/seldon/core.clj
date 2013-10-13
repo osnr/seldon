@@ -136,17 +136,24 @@
 (def rate->resources
   {:forest-change
    (fn [rate-value resources]
-     (assoc resources :forest (+ (resources :forest)
-                                 rate-value)))
+     (assoc resources :forest (max 0
+                                   (min 1
+                                        (+ (resources :forest)
+                                           rate-value)))))
 
    :cropland-change
    (fn [rate-value resources]
-     (assoc resources :cropland (+ (resources :cropland)
-                                   rate-value)))
+     (assoc resources :cropland (max 0
+                                     (min 1
+                                          (+ (resources :cropland)
+                                             rate-value)))))
    
    :pasture-change
    (fn [rate-value resources]
-     (assoc resources :pasture (+ (resources :pasture))))})
+     (assoc resources :pasture (max 0
+                                    (min 1
+                                         (+ (resources :pasture)
+                                            rate-value)))))})
 
 (defn rand-normal [scale]
   (* scale
