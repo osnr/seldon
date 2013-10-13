@@ -1,4 +1,5 @@
-(ns seldon.core)
+(ns seldon.core
+  (:require [clojure.core.async :refer [>! <! alts! go alt! put! close! chan]]))
 
 (defrecord Tile [resources pops])
 
@@ -99,6 +100,39 @@
    (fn [rate-value stocks]
      (assoc stocks :war-readiness (+ rate-value (stocks :war-readiness))))})
 
+(def rate->resources
+  {:fertility
+   (fn [rate-value resources]
+     resources)
+
+   :mortality
+   (fn [rate-value resources]
+     resources)
+
+   :pop-stability
+   (fn [rate-value resources]
+     resources)
+
+   :cultural-contact
+   (fn [rate-value resources]
+     resources)
+
+   :political-stability
+   (fn [rate-value resources]
+     resources)
+
+   :warlikeness
+   (fn [rate-value resources]
+     resources)
+
+   :gdp
+   (fn [rate-value resources]
+     resources)
+
+   :war-preparation
+   (fn [rate-value resources]
+     resources)})
+
 (defn rand-normal [scale]
   (* scale
      (- (reduce + (take 12 (repeatedly rand))) 6)))
@@ -158,11 +192,12 @@
                })
 
         big-tile
-        (Tile. {:forest 0.75
+        (Tile. {:forest 1
+                :elevation 0.5
+                :aridity 0.5
                 :bronze 0.5
                 :iron 0.5
                 :cropland 0.25
-                :elevation 0 ;0=low, 1=hills, 2=mountains
                 :wetness 1}
                [big-pop])]
     big-tile))
@@ -195,6 +230,15 @@
           rates
           stocks)))
 
+(defn step-resources [resources pops]
+  (reduce (fn [resources pop]
+            (reduce-kv (fn [resources rate rate-value]
+                         ((rate->resources rate) rate-value resources))
+                       resources
+                       (:rates pop)))
+          resources
+          pops))
+
 (defn weighted-average [a b a-weight b-weight]
   (/ (+ (* a a-weight) (* b b-weight)) (+ a-weight b-weight)))
 
@@ -223,9 +267,9 @@
           pops))
 
 (defn step-tile [tile]
-  ; TODO (calculate state of tile based on stocks, regrowth rates, etc)
-  (Tile. (:resources tile)
-         (diffuse-pops (mapv (partial step-pop tile) (:pops tile)))))
+  (let [pops (:pops tile)]
+    (Tile. (step-resources pops (:resources tile))
+           (diffuse-pops (mapv (partial step-pop tile) pops)))))
 
 (defn simple-test []
   (let [simple-pop (Pop. {:pastorialism 0.1 ; simple memes
@@ -235,7 +279,6 @@
                          base-rates ; simple rates
 
                          {:population 10 ; simple stocks
-                          :domestication-corn 0
                           :war-readiness 0.1})
 
         simple-pop-2 (Pop. {:pastorialism 0.9 ; simple memes
@@ -245,12 +288,19 @@
                            base-rates ; simple rates
 
                            {:population 10 ; simple stocks
-                            :domestication-corn 0
                             :war-readiness 0.1})
 
-        simple-tile (Tile. [] [simple-pop
-                               simple-pop-2])]
-    (loop [tile simple-tile]
-      (clojure.pprint/pprint tile)
-      (Thread/sleep 500)
-      (recur (step-tile tile)))))
+        simple-tile (Tile. {:forest 1
+                            :elevation 0.5
+                            :aridity 0.5
+                            :bronze 0.5
+                            :iron 0.5
+                            :cropland 0.75}
+                           [simple-pop simple-pop-2])
+        out (chan)]
+    (go (loop [tile simple-tile]
+          (>! out tile)
+          (clojure.pprint/pprint tile)
+          (Thread/sleep 500)
+          (recur (step-tile tile))))
+    out))
