@@ -26,10 +26,10 @@
    :pasture-change 0})
 
 (defn agriculturalProductivity [tile]
-  ((:resources tile) :cropland))
+  1)
 
 (defn pastoralProductivity [tile]
-  ((:resources tile) :pasture))
+  1)
 
 (def meme->rates
   {:pastorialism
@@ -152,75 +152,6 @@
   (* scale
      (- (reduce + (take 12 (repeatedly rand))) 6)))
 
-(defn big-test []
-  (let [big-pop
-        (Pop. {:pastorialism 0.1
-               :forest-gardening 0.1
-               :agriculture 0.1
-               :slash-and-burn 0.1
-               :irrigation 0.1
-               :crop-rotation 0.1
-
-               :pseudo-writing 0.1
-               :writing 0.1
-               :alphabetic-writing 0.1
-
-               :bow-and-arrow 0.1
-               :bronze-weapons 0.1
-               :iron-weapons 0.1
-
-               :slavery 0.1
-               :class-structure 0.1
-               :cities 0.1
-
-               :bazaar-economy 0.1
-               :state-planning 0.1
-               :value-gold 0.1
-               :value-silver 0.1
-
-               :shamanic 0.1
-               :pantheon-of-gods 0.1
-               :one-god 0.1
-               :revelation 0.1
-               :state-priesthood 0.1
-               :holy-sites 0.1
-               :animal-sacrifice 0.1
-               :human-sacrifice 0.1
-               
-               :fertility-modifier 1.0
-
-               :small-boats 0.1
-               :sailing 0.1
-               :paved-roads 0.1}
-
-              {:fertility 2
-               :mortality 0.5
-               :pop-stability 1
-               :political-stability 0.1
-               :warlikeness 0.1
-               :gdp 1
-               :war-preparation 0.1
-               :forest-change 0
-               :cropland-change 0
-               :pasture-change 0}
-
-              {:population 100
-               :war-readiness 0.1
-               :wealth 0
-               })
-
-        big-tile
-        (Tile. {:forest 0.50
-                :elevation 0.5
-                :aridity 0.5
-                :bronze 0.5
-                :iron 0.5
-                :cropland 0.25
-                :pasture 0.25
-                :wetness 1}
-               [big-pop])]
-    big-tile))
-
 (defn step-memome [tile memome]
   (into {} (for [[meme value] memome]
              [meme (max 0.001
@@ -275,7 +206,7 @@
                                  (weighted-average (second %1)
                                                    (second %2)
                                                     pop-weight 
-                                                   (Math/pow target-pop-weight 25)))
+                                                   (Math/pow target-pop-weight 5)))
                         (:memome pop) (:memome target-pop)))
           (:rates target-pop)
           (:stocks target-pop))))
@@ -314,8 +245,7 @@
 (defn simple-test-proc []
   (let [simple-pop (Pop. {:pastorialism 0.5 ; simple memes
                           :forest-gardening 0.5
-                          :agriculture 0
-                          :bow-and-arrow 0.1
+                          :agriculture 0.5
                           :fertility-modifier 1.0}
 
                          base-rates ; simple rates
@@ -324,19 +254,6 @@
                           :war-readiness 0.1
                           :wealth 0})
 
-        simple-pop-2 (-> simple-pop
-                         (assoc-in [:memome :pastorialism] 0.0)
-                         (assoc-in [:memome :forest-gardening] 1.0)
-                         (assoc-in [:memome :bow-and-arrow] 0.1))
-
-        simple-pop-3 (assoc-in simple-pop [:memome :pastorialism] 1.0)
-
-        simple-pop-4 (-> simple-pop
-                         (assoc-in [:stocks :population] 2)
-                         (assoc-in [:memome :pastorialism] 1.0)
-                         (assoc-in [:memome :forest-gardening] 0.0)
-                         (assoc-in [:memome :fertility-modifier] 0.33))
-
         simple-tile (Tile. {:forest 0.5
                             :elevation 0.5
                             :aridity 0.5
@@ -344,7 +261,7 @@
                             :iron 0.5
                             :cropland 0.25
                             :pasture 0.25}
-                           [simple-pop simple-pop-2 simple-pop-3 simple-pop-4])
+                           (vec (repeat 4 simple-pop)))
 
         simple-grid (vec (repeat 9 (vec (repeat 9 simple-tile))))
 
