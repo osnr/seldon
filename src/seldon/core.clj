@@ -26,10 +26,10 @@
    :pasture-change 0})
 
 (defn agriculturalProductivity [tile]
-  1)
+  ((:resources tile) :cropland))
 
 (defn pastoralProductivity [tile]
-  1)
+  ((:resources tile) :pasture))
 
 (def meme->rates
   {:pastorialism
@@ -189,15 +189,22 @@
           rates
           stocks)))
 
+(defn constrain-resources [resources]
+  (let [land-sum (+ (:pasture resources) (:forest resources) (:cropland resources))
+        scale-pasture (/ (:pasture resources) land-sum)
+        scale-forest (/ (:forest resources) land-sum)
+        scale-cropland (/ (:cropland resources) land-sum)]
+    (assoc resources :pasture scale-pasture :forest scale-forest :cropland scale-cropland)))
+
 (defn step-resources [resources pops]
-  (reduce (fn [resources pop]
+  (constrain-resources (reduce (fn [resources pop]
             (reduce-kv (fn [resources rate rate-value]
                          ((rate->resources rate (constantly resources))
                           rate-value resources))
                        resources
                        (:rates pop)))
           resources
-          pops))
+          pops)))
 
 (defn step-tile [tile]
   (let [pops (remove #(= 0 (:population (:stocks %))) (:pops tile))]

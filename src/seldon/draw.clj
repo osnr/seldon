@@ -39,9 +39,9 @@
           tile-y (range 0 tile-h)
           :let [tile (get-in grid [tile-x tile-y])]]
     ;(println tile)
-    (fill (:pasture (:resources tile))
-          (:forest (:resources tile))
-          (:cropland (:resources tile)))
+    (fill (* 255 (:pasture (:resources tile)))
+          (* 255 (:forest (:resources tile)))
+          (* 255 (:cropland (:resources tile))))
     (println (:pasture (:resources tile))
           (:forest (:resources tile))
           (:cropland (:resources tile)))
