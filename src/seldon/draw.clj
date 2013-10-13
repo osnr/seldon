@@ -8,11 +8,14 @@
 (def tile-width 100)
 (def tile-height 100)
 
+(defn -radius [pop]
+  (/ (:population (:stocks pop)) 5))
+
 (defn pop->circle [pop i tile-x tile-y]
   (let [memome (:memome pop)]
     {:x        (+ (* tile-x tile-width) avg-radius (* avg-radius i))
      :y        (+ (* tile-y tile-height) avg-radius)
-     :radius   (:population (:stocks pop))
+     :radius   (-radius pop)
      :fill-col (color (* 255 (:pastorialism memome))
                       (* 255 (:forest-gardening memome))
                       (* 255 (:agriculture memome)))
@@ -23,7 +26,7 @@
   (smooth)
   (stroke-weight 1)
   (fill-int 150 50)
-  (set-state! :grid (atom {})))
+  (set-state! :grid (atom [])))
 
 (defn draw-circle
   [{:keys [x y radius fill-col alph]}]
@@ -44,23 +47,21 @@
 (defn draw [in]
   (when (= 0 (mod (frame-count) 30))
     (let [grid (<!! in)]
-      (swap! (state :grid) (constantly grid))))
+      (let [circles
+            (flatten (map-indexed
+                      (fn [x col]
+                        (map-indexed
+                         (fn [y tile]
+                           (map-indexed
+                            (fn [i pop]
+                              ;; (println "POP" i pop)
+                              (pop->circle pop i x y))
+                            (:pops tile)))
+                         col))
+                      grid))]
+        (swap! (state :grid) (constantly [grid circles])))))
 
-  (when-let [grid @(state :grid)]
-    (background 255)
-    (draw-grid (count grid)
-               (count (first grid)))
-    (doall (map-indexed
-            (fn [x col]
-              (doall (map-indexed
-                      (fn [y tile]
-                        (doall (map-indexed
-                                (fn [i pop]
-                                  ;; (println "POP" i pop)
-                                  (draw-circle (pop->circle pop i x y)))
-                                (:pops tile))))
-                      col)))
-            grid))
+  (when-let [[grid circles] @(state :grid)]
     (let [mx (mouse-x) my (mouse-y)
           tile-x (quot mx tile-width)
           tile-y (quot my tile-height)
@@ -68,9 +69,15 @@
                      (/ avg-radius 2))
                   avg-radius)
           pop (get (:pops (get-in grid [tile-x tile-y])) i)]
+      (background 255)
+      (draw-grid (count grid)
+                 (count (first grid)))
+      (doseq [circle circles]
+        (draw-circle circle))
       (when pop
-        (let [radius (:population (:stocks pop))]
+        (let [radius (-radius pop)]
           (stroke 0 0 0)
+          (no-fill)
           (ellipse (+ (* tile-x tile-width) avg-radius (* avg-radius i))
                    (+ (* tile-y tile-height) avg-radius)
                    (* 2 radius)
